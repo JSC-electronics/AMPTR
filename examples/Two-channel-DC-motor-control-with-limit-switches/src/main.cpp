@@ -10,174 +10,7 @@
 
 
 #include <Arduino.h>
-#include <SimpleRelay.h>
-#include <ObjectButton.h>
-#include <interfaces/IOnPressListener.h>
-
-#define NUMBER_OF_CHANNELS      2
-
-#define PIN_RELAY_M1A           3
-#define PIN_RELAY_M1B           5
-#define PIN_RELAY_M2A           10
-#define PIN_RELAY_M2B           11
-
-#define PIN_BUTTON_STOP         A5
-#define PIN_BUTTON_OPEN         A6
-#define PIN_BUTTON_CLOSE        A7
-
-#define PIN_SIGNAL_LIGHT_A      6
-#define PIN_SIGNAL_LIGHT_B      9
-
-#define JUMP_1                  12 // limit switch logic A, log. 0 = NO (jumper attached), log. 1 = NC (jumper detached)
-#define JUMP_2                  4  // limit switch logic B, log. 0 = NO (jumper attached), log. 1 = NC (jumper detached)
-#define JUMP_3                  7  // push button logic UP, log. 0 = push once to move (jumper attached), log. 1 = hold to move (jumper detached)
-#define JUMP_4                  8  // push button logic DOWN, log. 0 = push once to move (jumper attached), log. 1 = hold to move (jumper detached)
-
-#define PIN_ENDSW_S1_UP         A3   
-#define PIN_ENDSW_S2_DOWN       A2  
-#define PIN_ENDSW_S3_UP         A1   
-#define PIN_ENDSW_S4_DOWN       A0
-
-#define DEBOUNCE_TICKS          5   //ms
-#define CLICK_TICKS             150 //ms
-
-// state machine states
-typedef enum {
-  STOP,
-  OPENING,
-  CLOSING,
-  OPEN,
-  CLOSED,
-  UNKNOWN
-} CoverState;
-
-// Motor channel
-typedef enum {
-  CHANNEL_A = 0, // for motor A (M1)
-  CHANNEL_B = 1 // for motor B (M2)
-} MOTOR_CHANNEL;
-
-// Motor channel
-typedef enum {
-  DIRECTION_UP = 0, // for motor A (M1)
-  DIRECTION_DOWN = 1 // for motor B (M2)
-} MOTOR_DIRECTION;
-
-//control LED flickering
-bool indicatorState[NUMBER_OF_CHANNELS] = {false, false};
-
-// jumpers logic variables
-bool holdButtonUp = false;
-bool holdButtonDown = false;
-
-// global variables
-SimpleRelay *relay1;
-SimpleRelay *relay2;
-SimpleRelay *relay3;
-SimpleRelay *relay4;
-CoverState coverState[NUMBER_OF_CHANNELS];
-CoverState lastGateState[NUMBER_OF_CHANNELS];
-
-static const uint8_t coverLimitSwitchPins[NUMBER_OF_CHANNELS][2] = {
-                                        {PIN_ENDSW_S1_UP, PIN_ENDSW_S2_DOWN},
-                                        {PIN_ENDSW_S3_UP, PIN_ENDSW_S4_DOWN}
-                                      };
-
-static const uint8_t coverIndicatorPins[NUMBER_OF_CHANNELS] = {
-                    PIN_SIGNAL_LIGHT_A,
-                    PIN_SIGNAL_LIGHT_B
-                  };                 
-
-SimpleRelay *coverRelays[NUMBER_OF_CHANNELS][2] = {{relay1, relay2},{relay3, relay4}};                   
-
-// function decalrations
-void setupFlickeringTimer();
-void readJumpers(void);
-void readEndSwitches(MOTOR_CHANNEL channel);
-void stateMachine(MOTOR_CHANNEL channel);
-void stopCover(MOTOR_CHANNEL channel);
-void openCover(MOTOR_CHANNEL channel);
-void closeCover(MOTOR_CHANNEL channel);
-void serialPrinting(MOTOR_CHANNEL channel);
-
-class CoverButtons : private virtual jsc::IOnPressListener {
-public:
-    CoverButtons() = default;
-
-    void init();
-
-    void update();
-
-private:
-
-    void onPress(jsc::Button &button) override;
-
-    void onRelease(jsc::Button &button) override;
-
-    void onLongPressStart(jsc::Button &button) override {};
-
-    void onLongPressEnd(jsc::Button &button) override {};
-
-    jsc::DigitalButton buttonS5Up = jsc::DigitalButton(PIN_BUTTON_OPEN, true);
-    jsc::DigitalButton buttonS6Down = jsc::DigitalButton(PIN_BUTTON_CLOSE, true);
-    jsc::DigitalButton buttonS7Stop = jsc::DigitalButton(PIN_BUTTON_STOP, true);
-};
-
-void CoverButtons::onPress(jsc::Button &button) {
-  switch(button.getId()){
-    case PIN_BUTTON_OPEN:
-      coverState[CHANNEL_A] = OPENING;
-      coverState[CHANNEL_B] = OPENING; 
-      break;
-    case PIN_BUTTON_CLOSE:
-      coverState[CHANNEL_A] = CLOSING;
-      coverState[CHANNEL_B] = CLOSING;
-      break;
-    case PIN_BUTTON_STOP:
-      if(coverState[CHANNEL_A] != UNKNOWN){
-        coverState[CHANNEL_A] = STOP;
-      }
-      if(coverState[CHANNEL_B] != UNKNOWN){
-        coverState[CHANNEL_B] = STOP;
-      }
-      break;
-  }
-}
-
-void CoverButtons::onRelease(jsc::Button &button) {
-  switch(button.getId()){
-    case PIN_BUTTON_OPEN:
-      if(holdButtonUp){
-        coverState[CHANNEL_A] = STOP;
-        coverState[CHANNEL_B] = STOP;
-      }
-      break;
-    case PIN_BUTTON_CLOSE:
-      if(holdButtonDown){
-        coverState[CHANNEL_A] = STOP;
-        coverState[CHANNEL_B] = STOP;
-      }
-      break;
-  }
-}
-
-void CoverButtons::init() {
-  buttonS5Up.setDebounceTicks(DEBOUNCE_TICKS);
-  buttonS5Up.setOnPressListener(this);
-  buttonS6Down.setDebounceTicks(DEBOUNCE_TICKS);
-  buttonS6Down.setOnPressListener(this);
-  buttonS7Stop.setDebounceTicks(DEBOUNCE_TICKS);
-  buttonS7Stop.setOnPressListener(this);
-}
-
-void CoverButtons::update() {
-  buttonS5Up.tick();
-  buttonS6Down.tick();
-  buttonS7Stop.tick();
-}
-
-// buttons instance
-CoverButtons *coverButtons;
+#include "defines.h"
 
 void setup() {
   //init inputs
@@ -194,6 +27,7 @@ void setup() {
   pinMode(JUMP_4, INPUT_PULLUP);
   pinMode(PIN_SIGNAL_LIGHT_A, OUTPUT);
   pinMode(PIN_SIGNAL_LIGHT_B, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
 
   digitalWrite(PIN_SIGNAL_LIGHT_A, LOW);
   digitalWrite(PIN_SIGNAL_LIGHT_B, LOW);
@@ -212,10 +46,10 @@ void setup() {
   coverButtons->init();
 
   // set relays instances
-  relay1 = new SimpleRelay(PIN_RELAY_M1A, true);
-  relay2 = new SimpleRelay(PIN_RELAY_M1B, true);
-  relay1 = new SimpleRelay(PIN_RELAY_M2A, true);
-  relay2 = new SimpleRelay(PIN_RELAY_M2B, true);
+  relay1 = new SimpleRelay(PIN_RELAY_M1A, false);
+  relay2 = new SimpleRelay(PIN_RELAY_M1B, false);
+  relay3 = new SimpleRelay(PIN_RELAY_M2A, false);
+  relay4 = new SimpleRelay(PIN_RELAY_M2B, false);
   
   relay1->off();
   relay2->off();
@@ -271,6 +105,7 @@ void setupFlickeringTimer() {
 ISR(TIMER1_COMPA_vect) {
   indicatorState[CHANNEL_A] = !indicatorState[CHANNEL_A];
   indicatorState[CHANNEL_B] = !indicatorState[CHANNEL_B];
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
 /**
@@ -280,8 +115,8 @@ ISR(TIMER1_COMPA_vect) {
 	@retval none
 */
 void readJumpers(void){
-  (!digitalRead(JUMP_3)) ? holdButtonUp = true : holdButtonUp = false;
-  (!digitalRead(JUMP_4)) ? holdButtonDown = true : holdButtonDown = false;
+  (digitalRead(JUMP_3)) ? holdButtonUp = true : holdButtonUp = false;
+  (digitalRead(JUMP_4)) ? holdButtonDown = true : holdButtonDown = false;
 }
 
 /**
@@ -331,12 +166,8 @@ void stateMachine(MOTOR_CHANNEL channel) {
 
     case OPENING:
       openCover(channel);
-      if(!indicatorState[channel]){
-        digitalWrite(coverIndicatorPins[channel], LOW);
-      }
-      else{
-        digitalWrite(coverIndicatorPins[channel], HIGH);
-      }
+      ( indicatorState[channel] == false ) ? 
+            digitalWrite(coverIndicatorPins[channel], LOW) : digitalWrite(coverIndicatorPins[channel], HIGH);
       break;
 
     case OPEN:
@@ -346,22 +177,13 @@ void stateMachine(MOTOR_CHANNEL channel) {
 
     case CLOSING:
       closeCover(channel);
-      if(!indicatorState[channel]){
-        digitalWrite(coverIndicatorPins[channel], LOW);
-      }
-      else{
-        digitalWrite(coverIndicatorPins[channel], HIGH);
-      }
+      ( indicatorState[channel] == false ) ? 
+            digitalWrite(coverIndicatorPins[channel], LOW) : digitalWrite(coverIndicatorPins[channel], HIGH);
       break;
 
     case CLOSED:
       stopCover(channel);
-      if(!indicatorState[channel]){
-        digitalWrite(coverIndicatorPins[channel], LOW);
-      }
-      else{
-        digitalWrite(coverIndicatorPins[channel], HIGH);
-      }
+      digitalWrite(coverIndicatorPins[channel], LOW);
       break;
 
     case UNKNOWN:
@@ -382,8 +204,16 @@ void stateMachine(MOTOR_CHANNEL channel) {
 	@retval none
 */
 void stopCover(MOTOR_CHANNEL channel) {
-  coverRelays[channel][0]->off();
-  coverRelays[channel][1]->off();
+  if ( channel == CHANNEL_A ) {
+    relay1->off();
+    relay2->off();
+    return;
+  }
+  relay3->off();
+  relay4->off();
+
+  // coverRelays[channel][0]->off();
+  // coverRelays[channel][1]->off();
 }
 
 /**
@@ -393,8 +223,18 @@ void stopCover(MOTOR_CHANNEL channel) {
 	@retval none
 */
 void openCover(MOTOR_CHANNEL channel) {
-  coverRelays[channel][0]->on();
-  coverRelays[channel][1]->off();
+  if ( channel == CHANNEL_A ) {
+    relay1->on();
+    relay2->off();
+    return;
+  }
+  relay3->on();
+  relay4->off();
+
+  // coverRelays[channel][0]->on();
+  // coverRelays[channel][1]->off();
+
+ 
 }
 
 /**
@@ -404,8 +244,17 @@ void openCover(MOTOR_CHANNEL channel) {
 	@retval none
 */
 void closeCover(MOTOR_CHANNEL channel) {
-  coverRelays[channel][0]->off();
-  coverRelays[channel][1]->on();
+  if ( channel == CHANNEL_A ) {
+    relay1->off();
+    relay2->on();
+    return;
+  }
+  relay3->off();
+  relay4->on();
+
+
+  // coverRelays[channel][0]->off();
+  // coverRelays[channel][1]->on();
 }
 
 /**
@@ -416,6 +265,7 @@ void closeCover(MOTOR_CHANNEL channel) {
 */
 void serialPrinting(MOTOR_CHANNEL channel){
   if ( coverState[channel] != lastGateState[channel] ) {
+    lastGateState[channel] = coverState[channel]; 
     Serial.print("Channel "); Serial.print(channel); Serial.print(": ");
 
     switch(coverState[channel]){
@@ -439,5 +289,4 @@ void serialPrinting(MOTOR_CHANNEL channel){
       break;
     }
   }
-  lastGateState[channel] = coverState[channel]; 
 }

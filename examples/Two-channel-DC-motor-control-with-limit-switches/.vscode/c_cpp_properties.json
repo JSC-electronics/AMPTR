@@ -8,10 +8,10 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "D:/JSC-software/AMPTR/SW/Two-channel-DC-motor-control-with-limit-switches/include",
-                "D:/JSC-software/AMPTR/SW/Two-channel-DC-motor-control-with-limit-switches/src",
-                "D:/JSC-software/AMPTR/SW/Two-channel-DC-motor-control-with-limit-switches/.pio/libdeps/miniatmega328/SimpleRelay/src",
-                "D:/JSC-software/AMPTR/SW/Two-channel-DC-motor-control-with-limit-switches/.pio/libdeps/miniatmega328/ObjectButton/src",
+                "D:/JSC-software/AMPTR/examples/Two-channel-DC-motor-control-with-limit-switches/include",
+                "D:/JSC-software/AMPTR/examples/Two-channel-DC-motor-control-with-limit-switches/src",
+                "D:/JSC-software/AMPTR/examples/Two-channel-DC-motor-control-with-limit-switches/.pio/libdeps/miniatmega328/SimpleRelay/src",
+                "D:/JSC-software/AMPTR/examples/Two-channel-DC-motor-control-with-limit-switches/.pio/libdeps/miniatmega328/ObjectButton/src",
                 "C:/Users/Ales/.platformio/packages/framework-arduino-avr/cores/arduino",
                 "C:/Users/Ales/.platformio/packages/framework-arduino-avr/variants/eightanaloginputs",
                 "C:/Users/Ales/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
@@ -24,10 +24,10 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "D:/JSC-software/AMPTR/SW/Two-channel-DC-motor-control-with-limit-switches/include",
-                    "D:/JSC-software/AMPTR/SW/Two-channel-DC-motor-control-with-limit-switches/src",
-                    "D:/JSC-software/AMPTR/SW/Two-channel-DC-motor-control-with-limit-switches/.pio/libdeps/miniatmega328/SimpleRelay/src",
-                    "D:/JSC-software/AMPTR/SW/Two-channel-DC-motor-control-with-limit-switches/.pio/libdeps/miniatmega328/ObjectButton/src",
+                    "D:/JSC-software/AMPTR/examples/Two-channel-DC-motor-control-with-limit-switches/include",
+                    "D:/JSC-software/AMPTR/examples/Two-channel-DC-motor-control-with-limit-switches/src",
+                    "D:/JSC-software/AMPTR/examples/Two-channel-DC-motor-control-with-limit-switches/.pio/libdeps/miniatmega328/SimpleRelay/src",
+                    "D:/JSC-software/AMPTR/examples/Two-channel-DC-motor-control-with-limit-switches/.pio/libdeps/miniatmega328/ObjectButton/src",
                     "C:/Users/Ales/.platformio/packages/framework-arduino-avr/cores/arduino",
                     "C:/Users/Ales/.platformio/packages/framework-arduino-avr/variants/eightanaloginputs",
                     "C:/Users/Ales/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
@@ -40,7 +40,7 @@
             },
             "defines": [
                 "PLATFORMIO=60104",
-                "ARDUINO_AVR_MINI",
+                "ARDUINO_AVR_NANO",
                 "F_CPU=16000000L",
                 "ARDUINO_ARCH_AVR",
                 "ARDUINO=10808",
