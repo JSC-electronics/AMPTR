@@ -60,6 +60,7 @@ bool indicatorState[NUMBER_OF_CHANNELS] = {false, false};
 // jumpers logic variables
 bool holdButtonUp = false;
 bool holdButtonDown = false;
+bool useNCLimitSW[NUMBER_OF_CHANNELS] = {false, false}; // if true, normally closed switches will be used. 
 
 // global variables
 SimpleRelay *relay1;

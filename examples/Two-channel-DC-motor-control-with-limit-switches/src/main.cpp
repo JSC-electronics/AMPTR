@@ -115,8 +115,10 @@ ISR(TIMER1_COMPA_vect) {
 	@retval none
 */
 void readJumpers(void){
-  (digitalRead(JUMP_3)) ? holdButtonUp = true : holdButtonUp = false;
-  (digitalRead(JUMP_4)) ? holdButtonDown = true : holdButtonDown = false;
+  (digitalRead(JUMP_1)) ? useNCLimitSW[0] = true : useNCLimitSW[0]  = false;
+  (digitalRead(JUMP_2)) ? useNCLimitSW[1] = true : useNCLimitSW[1]  = false;
+  (digitalRead(JUMP_3)) ? holdButtonUp    = true : holdButtonUp     = false;
+  (digitalRead(JUMP_4)) ? holdButtonDown  = true : holdButtonDown   = false;
 }
 
 /**
@@ -126,28 +128,28 @@ void readJumpers(void){
 	@retval none
 */
 void readEndSwitches(MOTOR_CHANNEL channel) {
-  if(!digitalRead(coverLimitSwitchPins[channel][DIRECTION_UP]) && 
-      !digitalRead(coverLimitSwitchPins[channel][DIRECTION_DOWN])) {
+  if((digitalRead(coverLimitSwitchPins[channel][DIRECTION_UP]) == useNCLimitSW[channel]) && 
+      (digitalRead(coverLimitSwitchPins[channel][DIRECTION_DOWN]) == useNCLimitSW[channel])) {
     stopCover(channel);
     coverState[channel] = UNKNOWN;
     return;
   }
 
-  if(!digitalRead(coverLimitSwitchPins[channel][DIRECTION_UP]) && 
+  if((digitalRead(coverLimitSwitchPins[channel][DIRECTION_UP]) == useNCLimitSW[channel]) && 
       coverState[channel] != CLOSING && coverState[channel] != OPEN) {
     coverState[channel] = OPEN;
   }
 
-  if(!digitalRead(coverLimitSwitchPins[channel][DIRECTION_DOWN]) && coverState[channel] != OPENING && 
+  if((digitalRead(coverLimitSwitchPins[channel][DIRECTION_DOWN]) == useNCLimitSW[channel]) && coverState[channel] != OPENING && 
       coverState[channel] != CLOSED) {
     coverState[channel] = CLOSED;
   } 
 
-  if(digitalRead(coverLimitSwitchPins[channel][DIRECTION_UP]) && coverState[channel] == OPEN) {
+  if((digitalRead(coverLimitSwitchPins[channel][DIRECTION_UP]) != useNCLimitSW[channel]) && coverState[channel] == OPEN) {
     coverState[channel] = UNKNOWN;
   } 
 
-  if(digitalRead(coverLimitSwitchPins[channel][DIRECTION_DOWN]) && coverState[channel] == CLOSED) {
+  if((digitalRead(coverLimitSwitchPins[channel][DIRECTION_DOWN]) != useNCLimitSW[channel]) && coverState[channel] == CLOSED) {
     coverState[channel] = UNKNOWN;
   }
 }
